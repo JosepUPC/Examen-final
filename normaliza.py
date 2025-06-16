@@ -1,28 +1,33 @@
+## importem les llibreies necessaries per al programa
 import tkinter as tk
 import tkinter.filedialog as fd
 import tkinter.ttk as ttk
 import os
 import re
 
+## funció per a la lectura de fitxers txt
 def leer_archivo(root, inputText, state):
-    varMessage = tk.StringVar(root, 'Seleccionar un archivo')
+    ## variable per enmagatzemar el nom del fitxer i mostrar-lo per l'article boto
+    varMessage = tk.StringVar(root, 'Selecciona un archiu de text')
     
+    ## funció de crida del fotcher amd askopenfilename i emmagatzemar dades a traces de al variable  input
     def seltext():
         fichero = fd.askopenfilename(
-            title="Seleccionar un archivo de texto",
+            title="Selecciona un archiu de text",
             filetypes=(("Archivos de texto", "*.txt"), ("Todos los archivos", "*.*"))
         )
         if fichero:
-            varMessage.set(f"Archivo seleccionado: {fichero}")
+            varMessage.set(f"Archiu seleccionat: {fichero}")
             with open(fichero, 'r', encoding='utf-8') as file:
                 content = file.read()
                 inputText.set(content)
                 state["filename"] = fichero  # Store the original filename
 
+    ## Article per a tigerejar la funció de selecció
     button = ttk.Button(root, textvariable=varMessage, command=seltext)
     button.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky='nsew')
 
-
+## funció per a mostrar el contigut importat i el modificat en un tk.Text
 def View_dual_content(root, inputText, outputText):
     frame = tk.Frame(root, bg='lightcyan')
     frame.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky='nsew')
@@ -49,7 +54,7 @@ def View_dual_content(root, inputText, outputText):
     frame_right.grid_rowconfigure(0, weight=1)
     frame_right.grid_columnconfigure(0, weight=1)
 
-    # Bind updates to the StringVars
+    # Bind carregar constantment el text per mostrar
     def bind_text_widget(var, widget):
         def update_text(*_):
             widget.config(state='normal')
@@ -61,7 +66,7 @@ def View_dual_content(root, inputText, outputText):
     bind_text_widget(inputText, text_in)
     bind_text_widget(outputText, text_out)
 
-    # Expand both text areas evenly
+    # expandeix de forma proporcional els dos frames per al finestra
     frame.grid_rowconfigure(0, weight=1)
     frame.grid_columnconfigure(0, weight=1)
     frame.grid_columnconfigure(1, weight=1)
@@ -69,10 +74,10 @@ def View_dual_content(root, inputText, outputText):
     root.grid_rowconfigure(2, weight=1)
     root.grid_columnconfigure(0, weight=1)
     root.grid_columnconfigure(1, weight=1)
-
-import re
-
+ 
+## funció clau per normalizar les dades dins del text
 def normalizaHoras_text(texto):
+    ## nomralitzar paraules en hores del dia
     def a24h(hora, periodo):
         if hora == 12:
             hora = 0
@@ -88,6 +93,7 @@ def normalizaHoras_text(texto):
             return hora if 1 <= hora <= 6 else -1
         return -1
 
+    ## funció que retorna les frases insertades ja normalitzades per l'anterior funció
     def normalitzar(match):
         if match.group("formato1"):
             h, m = match.group("h1"), match.group("m1")
@@ -145,6 +151,7 @@ def normalizaHoras_text(texto):
 
         return match.group(0)
 
+    ## patro per tal de distinguir quin format d'escriutura es trobar el text per tal de distribuir-lo
     patron = re.compile(r"""
         (?P<formato1>(?P<h1>\d{1,2}):(?P<m1>\d{2}))                         | # 18:30
         (?P<formato2>(?P<h2>\d{1,2})h(?P<m2>\d{1,2})?m?)                    | # 8h, 10h30m
@@ -156,16 +163,18 @@ def normalizaHoras_text(texto):
 
     return patron.sub(normalitzar, texto)
 
+## funció que executa la normalització del text entrant i l'escritura de la variable de sortida
 def add_modifier_button(root, inputText, outputText):
     def modifier(in_var, out_var):
         text = in_var.get()
         normalized = normalizaHoras_text(text)
         out_var.set(normalized)
 
+    ## boto que trigereja la funció modifier
     btn_modify = ttk.Button(root, text="Apply Modifications", command=lambda: modifier(inputText, outputText))
     btn_modify.grid(row=1, column=0, padx=10, pady=5, sticky='nsew')
 
-
+## funció final que utlitizar un boto per tal de tigerejar al funció asksaveasfilename per tal de guardar el contingut de la variable normalitzada de forma manual a un fitxer
 def add_save_button(root, outputText, state):
     def save_output():
         if not state.get("filename"):
@@ -188,23 +197,29 @@ def add_save_button(root, outputText, state):
     btn_save = ttk.Button(root, text="Save Output", command=save_output)
     btn_save.grid(row=1, column=1, padx=10, pady=5, sticky='nsew')
 
+## funció rpincipal
 def main():
+    ## delcara la finestra del programa i la seva configuració
     win = tk.Tk()
     win.title("Normalitzar Expressions Horàries")
     win.geometry("800x600")
     win.configure(bg='lightcyan')
     ttk.Style().configure('TButton', font=('Arial', 12), padding=10)
 
+    ## declara les variables que interactuen entre les diverses funcions.
     inputText = tk.StringVar(win)
     outputText = tk.StringVar(win)
     state = {"filename": None}  # To store the original file name
 
+    ## activa totes les funcions
     leer_archivo(win, inputText, state)
     add_modifier_button(win, inputText, outputText)
     add_save_button(win, outputText, state)
     View_dual_content(win, inputText, outputText)
 
+    ## mostra el contigut GUI de forma perpetua fins que s'acabi
     win.mainloop()
 
+## Declara com la funció main, la principal del programa
 if __name__ == '__main__':
     main()
